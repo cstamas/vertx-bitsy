@@ -1,10 +1,9 @@
-package org.cstamas.vertx.orientdb.examples;
+package org.cstamas.vertx.bitsy.examples;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import org.cstamas.vertx.bitsy.examples.TestVerticle;
 import org.junit.Test;
 
 public class BitsyExampleTest

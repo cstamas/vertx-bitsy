@@ -1,4 +1,4 @@
-package org.cstamas.vertx.orientdb.examples;
+package org.cstamas.vertx.bitsy.examples;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.SLF4JLogDelegateFactory;

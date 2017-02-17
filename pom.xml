@@ -41,6 +41,7 @@
 
   <modules>
     <module>vertx-bitsy</module>
+    <module>vertx-bitsy-rom</module>
     <module>vertx-bitsy-examples</module>
   </modules>
 
