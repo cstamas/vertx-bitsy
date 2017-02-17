@@ -1,6 +1,5 @@
 package org.cstamas.vertx.bitsy.examples.service;
 
-import java.util.List;
 import java.util.Map;
 
 import io.vertx.codegen.annotations.Fluent;
@@ -8,6 +7,7 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ProxyHelper;
 
 @ProxyGen
@@ -20,5 +20,5 @@ public interface GraphDatabaseService
   @Fluent
   GraphDatabaseService gremlinScript(Map<String, String> params,
                                      String script,
-                                     Handler<AsyncResult<List<String>>> handler);
+                                     Handler<AsyncResult<JsonObject>> handler);
 }

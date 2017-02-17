@@ -1,8 +1,6 @@
 package org.cstamas.vertx.bitsy.examples.service.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.script.Bindings;
@@ -11,6 +9,9 @@ import com.tinkerpop.gremlin.groovy.jsr223.GremlinGroovyScriptEngine;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.json.EncodeException;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import org.cstamas.vertx.bitsy.Database;
 import org.cstamas.vertx.bitsy.examples.service.GraphDatabaseService;
 import org.slf4j.Logger;
@@ -36,7 +37,7 @@ public class GraphDatabaseServiceImpl
   @Override
   public GraphDatabaseService gremlinScript(final Map<String, String> params,
                                             final String script,
-                                            final Handler<AsyncResult<List<String>>> handler)
+                                            final Handler<AsyncResult<JsonObject>> handler)
   {
     database.readTx(g -> {
       if (g.failed()) {
@@ -48,9 +49,17 @@ public class GraphDatabaseServiceImpl
         Bindings bindings = scriptEngine.createBindings();
         bindings.put("g", g.result());
         bindings.putAll(params);
+        Object result = null;
         try {
-          String string = String.valueOf(scriptEngine.eval(script, bindings));
-          handler.handle(Future.succeededFuture(Collections.singletonList(string)));
+          result = scriptEngine.eval(script, bindings);
+          HashMap<String, Object> resultMap = new HashMap<>();
+          resultMap.put("result", result);
+          JsonObject json = new JsonObject(Json.encode(resultMap));
+          handler.handle(Future.succeededFuture(json));
+        }
+        catch (EncodeException e) {
+          log.error("Result encode exception: result={}", result, e);
+          handler.handle(Future.failedFuture(e));
         }
         catch (Exception e) {
           log.error("Script execution error: params={}, script={}", params, script, e);

@@ -41,8 +41,8 @@ public class WriterVerticle
 
   private void handle(final TransactionalGraph tg, int number) {
     Vertex newVertex = tg.addVertex(null);
-    newVertex.setProperty("value", number);
     newVertex.setProperty("type", "number");
+    newVertex.setProperty("value", number);
 
     Vertex parity = parity(tg, number % 2 == 0);
     tg.addEdge(null, newVertex, parity, "is");
@@ -53,12 +53,12 @@ public class WriterVerticle
   private Vertex parity(final TransactionalGraph tg, boolean even) {
     String kind = even ? "even" : "odd";
     try {
-      return tg.getVertices("numberKind", kind).iterator().next();
+      return tg.getVertices("value", kind).iterator().next();
     }
     catch (NoSuchElementException e) {
       Vertex parity = tg.addVertex(null);
       parity.setProperty("type", "parity");
-      parity.setProperty("numberKind", kind);
+      parity.setProperty("value", kind);
       return parity;
     }
   }

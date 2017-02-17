@@ -23,7 +23,7 @@ public class ServiceReaderVerticle
     vertx.eventBus().consumer("goRead",
         (Message<JsonObject> m) -> {
           HashMap<String, String> params = new HashMap<>();
-          String script = "g.V('numberKind', $numberKind).inE('is').count()";
+          String script = "g.V('value', $numberKind).inE('is').count()";
           IntStream.range(0, 2).forEach(number -> {
             boolean even = number % 2 == 0;
             if (even) {
@@ -37,7 +37,8 @@ public class ServiceReaderVerticle
                 log.error("Error", ar.cause());
               }
               else {
-                log.info("SERVICE: {} count is {}", even ? "even" : "odd", ar.result());
+                int result = ar.result().getInteger("result");
+                log.info("SERVICE: {} count is {}", even ? "even" : "odd", result);
               }
             });
           });

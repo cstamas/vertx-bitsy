@@ -2,6 +2,7 @@ package org.cstamas.vertx.bitsy.examples;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import com.tinkerpop.blueprints.Vertex;
@@ -40,7 +41,13 @@ public class TestVerticle
         manager.create(
             connectionOptions,
             bh -> {
-              bh.createKeyIndex("number", Vertex.class);
+              Set<String> indexes = bh.getIndexedKeys(Vertex.class);
+              if (!indexes.contains("type")) {
+                bh.createKeyIndex("type", Vertex.class);
+              }
+              if (!indexes.contains("value")) {
+                bh.createKeyIndex("value", Vertex.class);
+              }
             },
             created -> {
               if (created.failed()) {
