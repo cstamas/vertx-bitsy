@@ -3,7 +3,10 @@ package org.cstamas.vertx.bitsy.rom;
 import java.util.UUID;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ProxyHelper;
@@ -41,12 +44,38 @@ public class BitsyRomVerticle
         startFuture.fail(opened.cause());
       }
       else {
-        setUpDatabase(startFuture);
+        setUpDatabase(startFuture.completer());
+      }
+    });
+
+    vertx.eventBus().consumer("reload", (Message<JsonObject> reloadMessage) -> {
+    });
+  }
+
+  @Override
+  public void stop(final Future<Void> stopFuture) throws Exception {
+    tearDownDatabase(isDown -> {
+      if (isDown.failed()) {
+        stopFuture.fail(isDown.cause());
+      }
+      else {
+        manager.close(stopFuture.completer());
       }
     });
   }
 
-  private void setUpDatabase(final Future<Void> future) {
+  private void reload(final Handler<AsyncResult<Void>> handler) {
+    tearDownDatabase(isDown -> {
+      if (isDown.failed()) {
+        handler.handle(Future.failedFuture(isDown.cause()));
+      }
+      else {
+        setUpDatabase(handler);
+      }
+    });
+  }
+
+  private void setUpDatabase(final Handler<AsyncResult<Void>> handler) {
     ConnectionOptions connectionOptions = new ConnectionOptions.Builder(nodeId).build();
     manager.create(
         connectionOptions,
@@ -55,12 +84,12 @@ public class BitsyRomVerticle
         },
         created -> {
           if (created.failed()) {
-            future.fail(created.cause());
+            handler.handle(Future.failedFuture(created.cause()));
           }
           else {
             manager.get(connectionOptions.name(), ab -> {
               if (ab.failed()) {
-                future.fail(ab.cause());
+                handler.handle(Future.failedFuture(ab.cause()));
               }
               else {
                 database = ab.result();
@@ -72,7 +101,7 @@ public class BitsyRomVerticle
                     RomDatabase.ADDRESS,
                     serviceTimeoutSeconds
                 );
-                future.complete();
+                handler.handle(Future.succeededFuture());
               }
             });
           }
@@ -80,18 +109,24 @@ public class BitsyRomVerticle
     );
   }
 
-  private void tearDownDatabase(final Future<Void> future) {
+  private void tearDownDatabase(final Handler<AsyncResult<Void>> handler) {
     if (service != null) {
       ProxyHelper.unregisterService(service);
       service = null;
     }
-    Future<Void> closeFuture = Future.future();
     if (database != null) {
-      database.close(closeFuture.completer());
+      database.close(closed -> {
+        if (closed.failed()) {
+          handler.handle(Future.failedFuture(closed.cause()));
+        }
+        else {
+          database = null;
+          handler.handle(Future.succeededFuture());
+        }
+      });
     }
     else {
-      closeFuture.complete();
+      handler.handle(Future.succeededFuture());
     }
-    closeFuture.setHandler(future.completer());
   }
 }
