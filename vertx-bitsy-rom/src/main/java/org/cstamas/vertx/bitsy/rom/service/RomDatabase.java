@@ -19,8 +19,8 @@ public interface RomDatabase
   RomDatabase status(Handler<AsyncResult<JsonObject>> handler);
 
   @Fluent
-  RomDatabase query(Map<String, String> params,
-                    String queryName,
+  RomDatabase query(String queryName,
+                    JsonObject params,
                     Handler<AsyncResult<JsonObject>> handler);
 
   @Fluent

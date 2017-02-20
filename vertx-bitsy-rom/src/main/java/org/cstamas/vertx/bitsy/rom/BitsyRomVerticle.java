@@ -1,5 +1,7 @@
 package org.cstamas.vertx.bitsy.rom;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import io.vertx.core.AbstractVerticle;
@@ -11,8 +13,9 @@ import org.cstamas.vertx.bitsy.ConnectionOptions;
 import org.cstamas.vertx.bitsy.Database;
 import org.cstamas.vertx.bitsy.Manager;
 import org.cstamas.vertx.bitsy.ManagerOptions;
+import org.cstamas.vertx.bitsy.rom.service.Query;
 import org.cstamas.vertx.bitsy.rom.service.RomDatabase;
-import org.cstamas.vertx.bitsy.rom.service.impl.RomDatabaseImpl;
+import org.cstamas.vertx.bitsy.rom.service.support.RomDatabaseImpl;
 
 public class BitsyRomVerticle
     extends AbstractVerticle
@@ -27,10 +30,13 @@ public class BitsyRomVerticle
 
   private Database database;
 
+  private Map<String, Query> queries;
+
   private MessageConsumer<JsonObject> service;
 
   @Override
   public void start(final Future<Void> startFuture) throws Exception {
+    queries = new HashMap<>();
     serviceTimeoutSeconds = config().getInteger("serviceTimeoutSeconds", 60);
     nodeId = config().getString("nodeId", UUID.randomUUID().toString());
 
@@ -44,6 +50,12 @@ public class BitsyRomVerticle
         setUpDatabase(startFuture);
       }
     });
+  }
+
+  @Override
+  public void stop(final Future<Void> stopFuture) throws Exception {
+    tearDownDatabase(stopFuture);
+    manager.close(stopFuture.completer());
   }
 
   private void setUpDatabase(final Future<Void> future) {
@@ -64,7 +76,7 @@ public class BitsyRomVerticle
               }
               else {
                 database = ab.result();
-                RomDatabase romDatabase = new RomDatabaseImpl(nodeId, database);
+                RomDatabase romDatabase = new RomDatabaseImpl(nodeId, database, queries);
                 service = ProxyHelper.registerService(
                     RomDatabase.class,
                     vertx,

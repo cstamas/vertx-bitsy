@@ -23,6 +23,11 @@
     </dependency>
 
     <dependency>
+      <groupId>org.cstamas.vertx.bitsy</groupId>
+      <artifactId>vertx-bitsy-rom</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
     </dependency>

@@ -62,6 +62,12 @@
 
       <dependency>
         <groupId>org.cstamas.vertx.bitsy</groupId>
+        <artifactId>vertx-bitsy-rom</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.cstamas.vertx.bitsy</groupId>
         <artifactId>vertx-bitsy-examples</artifactId>
         <version>${project.version}</version>
       </dependency>

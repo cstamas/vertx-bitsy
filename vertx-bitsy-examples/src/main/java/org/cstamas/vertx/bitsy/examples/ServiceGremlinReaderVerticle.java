@@ -9,17 +9,18 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import org.cstamas.vertx.bitsy.examples.service.GraphDatabaseService;
+import io.vertx.serviceproxy.ProxyHelper;
+import org.cstamas.vertx.bitsy.rom.service.RomDatabase;
 
-public class ServiceReaderVerticle
+public class ServiceGremlinReaderVerticle
     extends AbstractVerticle
 {
-  private static final Logger log = LoggerFactory.getLogger(ServiceReaderVerticle.class);
+  private static final Logger log = LoggerFactory.getLogger(ServiceGremlinReaderVerticle.class);
 
   @Override
   public void start(final Future<Void> startFuture) throws Exception {
     // this works across cluster, so over the wire too
-    GraphDatabaseService service = GraphDatabaseService.createProxy(vertx, "test");
+    RomDatabase service = ProxyHelper.createProxy(RomDatabase.class, vertx, "test");
     vertx.eventBus().consumer("goRead",
         (Message<JsonObject> m) -> {
           HashMap<String, String> params = new HashMap<>();
@@ -32,13 +33,13 @@ public class ServiceReaderVerticle
             else {
               params.put("$numberKind", "odd");
             }
-            service.gremlinScript(params, script, ar -> {
+            service.gremlin(params, script, ar -> {
               if (ar.failed()) {
                 log.error("Error", ar.cause());
               }
               else {
                 int result = ar.result().getInteger("result");
-                log.info("SERVICE: {} count is {}", even ? "even" : "odd", result);
+                log.info("GREMLIN: {} count is {}", even ? "even" : "odd", result);
               }
             });
           });
