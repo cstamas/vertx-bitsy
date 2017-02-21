@@ -8,9 +8,9 @@ import java.util.HashMap;
 
 import com.lambdazen.bitsy.BitsyGraph;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import org.cstamas.vertx.bitsy.ConnectionOptions;
@@ -40,7 +40,7 @@ public class ManagerImpl
 
   private static final Logger log = LoggerFactory.getLogger(ManagerImpl.class);
 
-  private final Context context;
+  private final Vertx vertx;
 
   private final ManagerOptions managerOptions;
 
@@ -48,27 +48,27 @@ public class ManagerImpl
 
   private Path bitsyHome;
 
-  public ManagerImpl(final Context context, final ManagerOptions managerOptions)
+  public ManagerImpl(final Vertx vertx, final ManagerOptions managerOptions)
   {
-    this.context = requireNonNull(context);
+    this.vertx = requireNonNull(vertx);
     this.managerOptions = requireNonNull(managerOptions);
     this.databaseInfos = new HashMap<>();
   }
 
   private <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    context.executeBlocking(blockingCodeHandler, false, resultHandler);
+    vertx.executeBlocking(blockingCodeHandler, false, resultHandler);
   }
 
   @Override
   public Manager open(final Handler<AsyncResult<Void>> handler) {
     executeBlocking(
-        v -> {
+        f -> {
           try {
             open();
-            handler.handle(Future.succeededFuture());
+            f.complete();
           }
           catch (Exception e) {
-            handler.handle(Future.failedFuture(e));
+            f.fail(e);
           }
         },
         handler
@@ -170,12 +170,14 @@ public class ManagerImpl
   }
 
   private void closeManager() {
-    databaseInfos.values().forEach(DatabaseInfo::close);
-    databaseInfos.clear();
+    synchronized (databaseInfos) {
+      databaseInfos.values().forEach(DatabaseInfo::close);
+      databaseInfos.clear();
+    }
   }
 
   void exec(final String name, final Handler<AsyncResult<BitsyGraph>> handler) {
-    context.runOnContext(v -> {
+    vertx.getOrCreateContext().runOnContext(v -> {
       try {
         DatabaseInfo databaseInfo = databaseInfos.get(name);
         if (databaseInfo == null) {

@@ -11,7 +11,7 @@ public interface Manager
     extends Closeable
 {
   static Manager create(Vertx vertx, ManagerOptions managerOptions) {
-    return new ManagerImpl(vertx.getOrCreateContext(), managerOptions);
+    return new ManagerImpl(vertx, managerOptions);
   }
 
   Manager open(Handler<AsyncResult<Void>> handler);
