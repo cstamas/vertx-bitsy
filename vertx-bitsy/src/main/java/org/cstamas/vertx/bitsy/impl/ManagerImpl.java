@@ -55,13 +55,9 @@ public class ManagerImpl
     this.databaseInfos = new HashMap<>();
   }
 
-  private <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    vertx.executeBlocking(blockingCodeHandler, false, resultHandler);
-  }
-
   @Override
   public Manager open(final Handler<AsyncResult<Void>> handler) {
-    executeBlocking(
+    vertx.executeBlocking(
         f -> {
           try {
             open();
@@ -73,12 +69,12 @@ public class ManagerImpl
         },
         handler
     );
-    return null;
+    return this;
   }
 
   @Override
   public void close(final Handler<AsyncResult<Void>> handler) {
-    executeBlocking(
+    vertx.executeBlocking(
         f -> {
           try {
             closeManager();
@@ -103,7 +99,7 @@ public class ManagerImpl
                         final Handler<BitsyGraph> handler,
                         final Handler<AsyncResult<Void>> resultHandler)
   {
-    executeBlocking(
+    vertx.executeBlocking(
         f -> {
           try {
             synchronized (databaseInfos) {
@@ -131,7 +127,7 @@ public class ManagerImpl
   public Manager get(final String name,
                      final Handler<AsyncResult<Database>> handler)
   {
-    executeBlocking(
+    vertx.executeBlocking(
         f -> {
           try {
             DatabaseInfo databaseInfo = databaseInfos.get(name);
@@ -177,26 +173,33 @@ public class ManagerImpl
   }
 
   void exec(final String name, final Handler<AsyncResult<BitsyGraph>> handler) {
-    vertx.getOrCreateContext().runOnContext(v -> {
-      try {
-        DatabaseInfo databaseInfo = databaseInfos.get(name);
-        if (databaseInfo == null) {
-          IllegalArgumentException iaex = new IllegalArgumentException("Non existent database:" + name);
-          handler.handle(Future.failedFuture(iaex));
+    vertx.executeBlocking(
+        f -> {
+          try {
+            DatabaseInfo databaseInfo = databaseInfos.get(name);
+            if (databaseInfo == null) {
+              IllegalArgumentException iaex = new IllegalArgumentException("Non existent database:" + name);
+              handler.handle(Future.failedFuture(iaex));
+              f.fail(iaex);
+            }
+            else {
+              BitsyGraph graph = databaseInfo.bitsyGraph;
+              handler.handle(Future.succeededFuture(graph));
+              f.complete();
+            }
+          }
+          catch (Exception e) {
+            handler.handle(Future.failedFuture(e));
+            f.fail(e);
+          }
+        },
+        v -> {
         }
-        else {
-          BitsyGraph graph = databaseInfo.bitsyGraph;
-          handler.handle(Future.succeededFuture(graph));
-        }
-      }
-      catch (Exception e) {
-        handler.handle(Future.failedFuture(e));
-      }
-    });
+    );
   }
 
   void close(final String name, final Handler<AsyncResult<Void>> handler) {
-    executeBlocking(
+    vertx.executeBlocking(
         f -> {
           try {
             synchronized (databaseInfos) {
